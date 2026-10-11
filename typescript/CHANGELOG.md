@@ -1,8 +1,14 @@
 # Changelog
 
-## 0.1.0
+All notable changes to `@pogly/spacetimedb-relations` are listed here. It follows [semantic versioning](https://semver.org/).
 
-First release.
+## 0.1.1 (2026-10-11)
+
+- First release published from CI through npm trusted publishing, with provenance. No code changes.
+
+## 0.1.0 (2026-10-11)
+
+First release on npm.
 
 - `table()` registration with checked `insert` / `update` / `upsert` / `delete` / `previewDelete`.
 - `reference()` with `RESTRICT`, `CASCADE` and `SET_NULL`, nullable columns, self-references, index or scan lookups.

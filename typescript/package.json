@@ -1,6 +1,6 @@
 {
   "name": "@pogly/spacetimedb-relations",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Foreign keys, cascading deletes, multi-column unique, integrity check/repair and pagination for SpacetimeDB, as a submodule. Same schema as relations.rs / Relations.cs.",
   "license": "MIT",
   "type": "module",
