@@ -310,21 +310,29 @@ pub fn plan_delete(ctx: &ReducerContext, table: &str, key: &[u8]) -> Result<Dele
     // (child table, column, child key, parent table, parent key)
     type Restrict = (String, &'static str, Vec<u8>, String, Vec<u8>);
     let mut restricts: Vec<Restrict> = Vec::new();
-    let mut next = 0;
-    while next < order.len() {
-        let (t, k) = order[next].clone();
-        next += 1;
-        for fk in fks.iter().filter(|fk| fk.parent == t) {
-            for ck in crate::__relations_children(ctx, fk.child, fk.column, &k)? {
-                match fk.on_delete {
-                    CASCADE => {
-                        if seen.insert((fk.child.to_string(), ck.clone())) {
-                            order.push((fk.child.to_string(), ck));
+    // Breadth first, one level at a time, so a reference without an index is scanned once per
+    // level rather than once per row.
+    let mut frontier: Vec<(String, Vec<u8>)> = order.clone();
+    while !frontier.is_empty() {
+        let mut by_table: Vec<(String, Vec<Vec<u8>>)> = Vec::new();
+        for (t, k) in frontier.drain(..) {
+            match by_table.iter_mut().find(|(x, _)| *x == t) {
+                Some((_, keys)) => keys.push(k),
+                None => by_table.push((t, vec![k])),
+            }
+        }
+        for (t, keys) in &by_table {
+            for fk in fks.iter().filter(|fk| fk.parent == t) {
+                for (pk, ck) in crate::__relations_children(ctx, fk.child, fk.column, keys)? {
+                    match fk.on_delete {
+                        CASCADE => {
+                            if seen.insert((fk.child.to_string(), ck.clone())) {
+                                order.push((fk.child.to_string(), ck.clone()));
+                                frontier.push((fk.child.to_string(), ck));
+                            }
                         }
-                    }
-                    SET_NULL => nulls.push((fk.child.to_string(), fk.column, ck)),
-                    _ => {
-                        restricts.push((fk.child.to_string(), fk.column, ck, t.clone(), k.clone()))
+                        SET_NULL => nulls.push((fk.child.to_string(), fk.column, ck)),
+                        _ => restricts.push((fk.child.to_string(), fk.column, ck, t.clone(), pk)),
                     }
                 }
             }
@@ -486,17 +494,26 @@ pub fn page_size(limit: u32) -> usize {
     }
 }
 
-/// Take one page from `rows` (already positioned after the cursor, in key order). `next` is
-/// the cursor of the last row returned, if more rows follow.
-pub fn page<T, K: spacetimedb::Serialize>(
+/// Take one page from `rows` (the rows after the cursor, e.g. an index range scan): the `limit`
+/// rows with the smallest keys. `next` is the cursor of the last row returned, if more follow.
+///
+/// This reads the whole range: in SpacetimeDB 2.11 an index range scan inside a transaction
+/// that inserted into the range returns those new rows first, out of key order, so stopping
+/// early would pick the wrong rows (views are refreshed inside the writing transaction, so they
+/// hit this on every insert). Keep ranges narrow, e.g. one list's cards. See FINDINGS.
+pub fn page<T, K: spacetimedb::Serialize + Ord>(
     rows: impl Iterator<Item = T>,
     limit: u32,
     key: impl Fn(&T) -> K,
 ) -> Page<T> {
     let n = page_size(limit);
-    let mut items: Vec<T> = rows.take(n + 1).collect();
+    let mut items: Vec<T> = rows.collect();
     let more = items.len() > n;
-    items.truncate(n);
+    if more {
+        items.select_nth_unstable_by_key(n, |r| key(r));
+        items.truncate(n);
+    }
+    items.sort_unstable_by_key(|r| key(r));
     let next = if more {
         items.last().map(|r| cursor_of(&key(r)))
     } else {
@@ -702,18 +719,33 @@ macro_rules! relations {
         return Err(format!("{}.{} isn't nullable", stringify!($child), stringify!($col)))
     };
     (@null $row:ident, $col:ident, $child:ident, [nullable]) => { $row.$col = None; };
-    (@children $ctx:ident, $child:ident, $col:ident, $k:ident, [], [$idx:ident]) => {
-        $ctx.db.$child().$idx().filter(&$k).map(|r| $crate::relations::encode(checked::$child::key_of(&r))).collect::<Vec<_>>()
-    };
-    (@children $ctx:ident, $child:ident, $col:ident, $k:ident, [nullable], [$idx:ident]) => {
+    // (parent key, child key) for every child of any of the parents: `$keys` typed, `$raw` BSATN.
+    (@children $ctx:ident, $child:ident, $col:ident, $keys:ident, $raw:ident, [], [$idx:ident]) => {{
+        let mut out = Vec::new();
+        for (k, kb) in $keys.iter().zip($raw.iter()) {
+            for r in $ctx.db.$child().$idx().filter(k) {
+                out.push((kb.clone(), $crate::relations::encode(checked::$child::key_of(&r))));
+            }
+        }
+        out
+    }};
+    (@children $ctx:ident, $child:ident, $col:ident, $keys:ident, $raw:ident, [nullable], [$idx:ident]) => {
         compile_error!("`via` needs a non-nullable column: Option columns can't be index-filtered, so leave `via` off")
     };
-    (@children $ctx:ident, $child:ident, $col:ident, $k:ident, [$($flag:ident)?], []) => {
-        $ctx.db.$child().iter()
-            .filter(|r| $crate::relations!(@get r, $col, [$($flag)?]) == Some(&$k))
-            .map(|r| $crate::relations::encode(checked::$child::key_of(&r)))
-            .collect::<Vec<_>>()
-    };
+    (@children $ctx:ident, $child:ident, $col:ident, $keys:ident, $raw:ident, [$($flag:ident)?], []) => {{
+        let _ = &$keys;
+        let wanted: std::collections::BTreeSet<&[u8]> = $raw.iter().map(|k| k.as_slice()).collect();
+        let mut out = Vec::new();
+        for r in $ctx.db.$child().iter() {
+            if let Some(k) = $crate::relations!(@get r, $col, [$($flag)?]) {
+                let kb = $crate::relations::encode(k);
+                if wanted.contains(kb.as_slice()) {
+                    out.push((kb, $crate::relations::encode(checked::$child::key_of(&r))));
+                }
+            }
+        }
+        out
+    }};
 
     // --- entry point ---
     (
@@ -843,11 +875,12 @@ macro_rules! relations {
 
         #[doc(hidden)]
         #[allow(unused_variables)]
-        pub fn __relations_children(ctx: &spacetimedb::ReducerContext, child: &str, column: &str, parent_key: &[u8]) -> Result<Vec<Vec<u8>>, String> {
+        /// (parent key, child key) for the children of `parent_keys` through `child.column`.
+        pub fn __relations_children(ctx: &spacetimedb::ReducerContext, child: &str, column: &str, parent_keys: &[Vec<u8>]) -> Result<Vec<(Vec<u8>, Vec<u8>)>, String> {
             $(
                 if child == stringify!($child) && column == stringify!($col) {
-                    let k: checked::$parent::Key = $crate::relations::decode(parent_key)?;
-                    return Ok($crate::relations!(@children ctx, $child, $col, k, [$($flag)?], [$($idx)?]));
+                    let keys = parent_keys.iter().map(|k| $crate::relations::decode::<checked::$parent::Key>(k)).collect::<Result<Vec<_>, _>>()?;
+                    return Ok($crate::relations!(@children ctx, $child, $col, keys, parent_keys, [$($flag)?], [$($idx)?]));
                 }
             )*
             Err(format!("{child}.{column} isn't a declared reference"))
@@ -894,9 +927,11 @@ macro_rules! relations {
                     let mut out = Vec::new();
                     let mut seen = std::collections::BTreeSet::new();
                     for r in ctx.db.$ut().iter() {
+                        // The row with the smallest key keeps the values; the others are duplicates.
                         let first = ctx.db.$ut().$uidx().filter(($(&r.$uc),+ ,))
-                            .map(|o| $crate::relations::encode(checked::$ut::key_of(&o)))
+                            .map(|o| checked::$ut::key_of(&o).clone())
                             .min()
+                            .map(|k| $crate::relations::encode(&k))
                             .expect("the row itself matches");
                         let mine = $crate::relations::encode(checked::$ut::key_of(&r));
                         if first != mine && seen.insert(mine.clone()) {

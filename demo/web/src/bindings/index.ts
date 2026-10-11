@@ -48,6 +48,7 @@ import DemoMoveCardReducer from "./demo_move_card_reducer";
 import DemoRawAddTagReducer from "./demo_raw_add_tag_reducer";
 import DemoRawDeleteReducer from "./demo_raw_delete_reducer";
 import DemoRetagReducer from "./demo_retag_reducer";
+import DemoSetParentReducer from "./demo_set_parent_reducer";
 import RelationsSetPageReducer from "./relations_set_page_reducer";
 
 // Import all procedure arg schemas
@@ -204,6 +205,7 @@ const reducersSchema = __reducers(
   __reducerSchema("demo_raw_add_tag", DemoRawAddTagReducer),
   __reducerSchema("demo_raw_delete", DemoRawDeleteReducer),
   __reducerSchema("demo_retag", DemoRetagReducer),
+  __reducerSchema("demo_set_parent", DemoSetParentReducer),
   __reducerSchema("relations_set_page", RelationsSetPageReducer),
 );
 

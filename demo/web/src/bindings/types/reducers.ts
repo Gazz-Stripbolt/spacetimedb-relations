@@ -20,6 +20,7 @@ import DemoMoveCardReducer from "../demo_move_card_reducer";
 import DemoRawAddTagReducer from "../demo_raw_add_tag_reducer";
 import DemoRawDeleteReducer from "../demo_raw_delete_reducer";
 import DemoRetagReducer from "../demo_retag_reducer";
+import DemoSetParentReducer from "../demo_set_parent_reducer";
 import RelationsSetPageReducer from "../relations_set_page_reducer";
 
 export type DemoAddBoardParams = __Infer<typeof DemoAddBoardReducer>;
@@ -36,5 +37,6 @@ export type DemoMoveCardParams = __Infer<typeof DemoMoveCardReducer>;
 export type DemoRawAddTagParams = __Infer<typeof DemoRawAddTagReducer>;
 export type DemoRawDeleteParams = __Infer<typeof DemoRawDeleteReducer>;
 export type DemoRetagParams = __Infer<typeof DemoRetagReducer>;
+export type DemoSetParentParams = __Infer<typeof DemoSetParentReducer>;
 export type RelationsSetPageParams = __Infer<typeof RelationsSetPageReducer>;
 

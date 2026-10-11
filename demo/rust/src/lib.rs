@@ -192,6 +192,19 @@ pub fn demo_move_card(ctx: &ReducerContext, id: u64, list_id: u64) -> Result<(),
     Ok(())
 }
 
+/// Make a card a subtask of another (or a top-level card, with `None`). Cycles are allowed;
+/// deletes cope with them.
+#[spacetimedb::reducer]
+pub fn demo_set_parent(
+    ctx: &ReducerContext,
+    id: u64,
+    parent_id: Option<u64>,
+) -> Result<(), String> {
+    let card = ctx.db.demo_card().id().find(id).ok_or("no such card")?;
+    checked::demo_card::update(ctx, DemoCard { parent_id, ..card })?;
+    Ok(())
+}
+
 #[spacetimedb::reducer]
 pub fn demo_assign(ctx: &ReducerContext, id: u64, member: Option<u64>) -> Result<(), String> {
     let card = ctx.db.demo_card().id().find(id).ok_or("no such card")?;
@@ -340,13 +353,8 @@ pub fn demo_card_page(ctx: &ViewContext) -> Vec<DemoCard> {
             continue;
         };
         let from = after.map_or(0, |a| a + 1);
-        out.extend(
-            ctx.db
-                .demo_card()
-                .by_list()
-                .filter((list_id, from..))
-                .take(state.limit as usize),
-        );
+        let rows = ctx.db.demo_card().by_list().filter((list_id, from..));
+        out.extend(relations::page(rows, state.limit, |c| c.id).items);
     }
     out
 }
