@@ -12,7 +12,7 @@ subscribe to. Available for **Rust**, **C#** and **TypeScript (as a submodule)**
 schema.
 
 [![CI](https://github.com/Gazz-Stripbolt/spacetimedb-relations/actions/workflows/ci.yml/badge.svg)](https://github.com/Gazz-Stripbolt/spacetimedb-relations/actions/workflows/ci.yml)
-![SpacetimeDB 2.11](https://img.shields.io/badge/SpacetimeDB-2.11-e8730c)
+![SpacetimeDB 2.12](https://img.shields.io/badge/SpacetimeDB-2.12-e8730c)
 ![TypeScript submodule](https://img.shields.io/badge/TypeScript-submodule-3178c6)
 [![npm](https://img.shields.io/npm/v/@pogly/spacetimedb-relations?label=npm%20%40pogly%2Fspacetimedb-relations&color=cb3837)](https://www.npmjs.com/package/@pogly/spacetimedb-relations)
 ![Rust](https://img.shields.io/badge/Rust-drop--in-b7410e)
@@ -92,7 +92,7 @@ sequenceDiagram
 ## Quick start (Rust)
 
 ```rust
-// src/lib.rs (Cargo.toml: spacetimedb = { version = "2.11.*", features = ["unstable"] })
+// src/lib.rs (Cargo.toml: spacetimedb = { version = "2.12.*", features = ["unstable"] })
 pub mod relations;   // copy rust/relations.rs to src/relations.rs
 
 relations! {
