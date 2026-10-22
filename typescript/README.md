@@ -1,7 +1,7 @@
 # spacetimedb-relations for TypeScript (submodule)
 
 Foreign keys with `restrict` / `cascade` / `set_null`, delete plans, multi-column unique, check and repair of
-existing data, and pagination, as a **SpacetimeDB submodule**. Source: [`src/index.ts`](src/index.ts) ·
+existing data, and pagination, as a **Spacetime submodule**. Source: [`src/index.ts`](src/index.ts) ·
 Complete example: [`demo/typescript`](../demo/typescript/src/index.ts)
 
 ## Install

@@ -1,6 +1,6 @@
 # Findings
 
-What we learned building relations on SpacetimeDB 2.11.
+What we learned building relations on Spacetime 2.11.
 
 ## Numbers
 
@@ -25,7 +25,7 @@ Each figure is one call's round trip from a client on the same machine (inserts:
 
 ## Design notes
 
-- **No triggers, so wrappers.** SpacetimeDB modules can't observe writes, so references are enforced on writes that
+- **No triggers, so wrappers.** Spacetime modules can't observe writes, so references are enforced on writes that
   go through `checked::*` (Rust), `RelationsTable` (C#) or the submodule's wrappers (TS). Raw writes skip the checks.
   `relations_check` finds what that broke and `relations_repair` cleans up what has a rule. The same tools work for
   data written before relations was added.
@@ -40,7 +40,7 @@ Each figure is one call's round trip from a client on the same machine (inserts:
   one) then scanned its child table once per deleted row, and deleting a list with 2,000 cards took 17 seconds
   (the card table also holds the subtask self-reference). Grouping each level's rows by table scans once per level:
   24 ms.
-- **Multi-column unique is enforced through an index, by the wrappers.** SpacetimeDB 2.11 only has single-column
+- **Multi-column unique is enforced through an index, by the wrappers.** Spacetime 2.11 only has single-column
   `#[unique]`, so a duplicate written around the wrappers isn't stopped. `relations_check` reports it, and repair
   leaves it for you to resolve: picking which row to drop is an application decision. If you need the database to
   enforce it, store a composite key column (for example the hex of `(card_id, tag)`'s BSATN) with `#[unique]` on it.
@@ -51,7 +51,7 @@ Each figure is one call's round trip from a client on the same machine (inserts:
   (`relations_page`: owner, list, cursor, limit) and the view reads the viewer's rows. Moving to another page is a
   reducer call, and the view stays live. Clean up with `clear_pages` on disconnect.
 
-## SpacetimeDB quirks
+## Spacetime quirks
 
 - **Index range scans aren't in key order inside a transaction that wrote to the range.** The datastore iterates the
   transaction's own inserts first and then the committed rows (`tx_iter.chain(commit_iter)` in

@@ -2,7 +2,7 @@
 
 # 🔧 Spacetime Relations
 
-**Foreign keys, cascading deletes, multi-column unique and pagination for SpacetimeDB.**
+**Foreign keys, cascading deletes, multi-column unique and pagination for Spacetime.**
 
 Declare how your tables reference each other once. Checked writes refuse rows that point nowhere, and deletes
 **cascade**, **set null** or are **refused** (`restrict`), all or nothing. Before deleting, ask what would happen:
@@ -12,7 +12,7 @@ subscribe to. Available for **Rust**, **C#** and **TypeScript (as a submodule)**
 schema.
 
 [![CI](https://github.com/Gazz-Stripbolt/spacetimedb-relations/actions/workflows/ci.yml/badge.svg)](https://github.com/Gazz-Stripbolt/spacetimedb-relations/actions/workflows/ci.yml)
-![SpacetimeDB 2.12](https://img.shields.io/badge/SpacetimeDB-2.12-e8730c)
+![Spacetime 2.12](https://img.shields.io/badge/Spacetime-2.12-e8730c)
 ![TypeScript submodule](https://img.shields.io/badge/TypeScript-submodule-3178c6)
 [![npm](https://img.shields.io/npm/v/@pogly/spacetimedb-relations?label=npm%20%40pogly%2Fspacetimedb-relations&color=cb3837)](https://www.npmjs.com/package/@pogly/spacetimedb-relations)
 ![Rust](https://img.shields.io/badge/Rust-drop--in-b7410e)
@@ -29,7 +29,7 @@ schema.
 ---
 
 > [!NOTE]
-> SpacetimeDB has no foreign keys yet ([feature request #2608](https://github.com/clockworklabs/SpacetimeDB/issues/2608))
+> Spacetime has no foreign keys yet ([feature request #2608](https://github.com/clockworklabs/SpacetimeDB/issues/2608))
 > and only single-column unique constraints. This enforces both **for writes that go through it**. Writes that go
 > around it aren't stopped, which is what `relations_check` is for. If native constraints ship, prefer them; the
 > declarations here map onto them one to one.
@@ -54,7 +54,7 @@ CI runs the same suites against every language:
 
 ## How it works
 
-SpacetimeDB has no triggers, so a module can't watch its own writes. Instead you write through **checked
+Spacetime has no triggers, so a module can't watch its own writes. Instead you write through **checked
 wrappers**. Deletes plan first, with reads only, then write:
 
 ```mermaid
@@ -150,7 +150,7 @@ Each figure is one call's round trip from a client on the same machine (inserts:
 
 - **Only checked writes are checked.** A raw insert, update or delete skips the rules. Keep raw writes to related
   tables out of your code (`grep` for them), and run `relations_check` after migrations.
-- **Nullable references scan.** SpacetimeDB can't index-filter an `Option` column, so finding the children of a
+- **Nullable references scan.** Spacetime can't index-filter an `Option` column, so finding the children of a
   nullable reference reads the child table, once per level of a cascade. Use a sentinel (`0` = none) on a plain
   column with an index if that table is large.
 - **Pages read their whole range** because of an ordering quirk in 2.11 (see
@@ -173,12 +173,12 @@ docs/                   PROTOCOL.md · FINDINGS.md · screenshots
 ## Credits
 
 Built by **Tinker** ([@Gazz-Stripbolt](https://github.com/Gazz-Stripbolt)), the resident gadgeteer for the
-[Pogly](https://pogly.gg) team: collaborative stream overlays, powered by SpacetimeDB. Pogly's own rows that
+[Pogly](https://pogly.gg) team: collaborative stream overlays, powered by Spacetime. Pogly's own rows that
 outlived their parents (drawings left behind by a bulk delete) are the motivating case for check and repair.
 
-More SpacetimeDB building blocks from this workshop: **[github.com/Gazz-Stripbolt](https://github.com/Gazz-Stripbolt)**.
+More Spacetime building blocks from this workshop: **[github.com/Gazz-Stripbolt](https://github.com/Gazz-Stripbolt)**.
 
-🚀 **New to SpacetimeDB?** If you sign up through **[this referral link](https://spacetimedb.com/?referral=Lethalchip)**,
+🚀 **New to Spacetime?** If you sign up through **[this referral link](https://spacetimedb.com/?referral=Lethalchip)**,
 Pogly gets free recurring energy. Thank you!
 
 ## License

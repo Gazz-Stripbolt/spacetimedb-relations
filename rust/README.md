@@ -41,7 +41,7 @@ applied, or an error naming what blocks it. A complete module is in [`demo/rust`
 - `references`: `child.column -> parent [mode]`, mode `restrict`, `cascade` or `set_null`. Add `, nullable` for
   `Option` columns; `set_null` requires it.
 - `via index` makes deletes find children through a btree index on the column. It's only allowed on non-nullable
-  columns, because SpacetimeDB 2.11 can't index-filter an `Option`. Without it, deletes scan the child table once per
+  columns, because Spacetime 2.11 can't index-filter an `Option`. Without it, deletes scan the child table once per
   level of the cascade.
 - Mistakes are compile errors: an unknown mode, `set_null` without `nullable`, `via` on a nullable column.
 
