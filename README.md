@@ -12,7 +12,7 @@ subscribe to. Available for **Rust**, **C#** and **TypeScript (as a submodule)**
 schema.
 
 [![CI](https://github.com/Gazz-Stripbolt/spacetimedb-relations/actions/workflows/ci.yml/badge.svg)](https://github.com/Gazz-Stripbolt/spacetimedb-relations/actions/workflows/ci.yml)
-![Spacetime 2.12](https://img.shields.io/badge/Spacetime-2.12-e8730c)
+![Spacetime 2.14](https://img.shields.io/badge/Spacetime-2.14-e8730c)
 ![TypeScript submodule](https://img.shields.io/badge/TypeScript-submodule-3178c6)
 [![npm](https://img.shields.io/npm/v/@pogly/spacetimedb-relations?label=npm%20%40pogly%2Fspacetimedb-relations&color=cb3837)](https://www.npmjs.com/package/@pogly/spacetimedb-relations)
 ![Rust](https://img.shields.io/badge/Rust-drop--in-b7410e)
@@ -92,7 +92,7 @@ sequenceDiagram
 ## Quick start (Rust)
 
 ```rust
-// src/lib.rs (Cargo.toml: spacetimedb = { version = "2.12.*", features = ["unstable"] })
+// src/lib.rs (Cargo.toml: spacetimedb = { version = "2.14.*", features = ["unstable"] })
 pub mod relations;   // copy rust/relations.rs to src/relations.rs
 
 relations! {
@@ -148,6 +148,8 @@ Each figure is one call's round trip from a client on the same machine (inserts:
 
 ## Good to know
 
+- **Needs a 2.14 host.** Modules built with the 2.14 libraries export a changed HTTP handler ABI, and older hosts reject
+  them ([release notes](https://github.com/clockworklabs/SpacetimeDB/releases/tag/v2.14.0)).
 - **Only checked writes are checked.** A raw insert, update or delete skips the rules. Keep raw writes to related
   tables out of your code (`grep` for them), and run `relations_check` after migrations.
 - **Nullable references scan.** Spacetime can't index-filter an `Option` column, so finding the children of a
