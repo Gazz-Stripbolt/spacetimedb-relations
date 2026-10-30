@@ -10,25 +10,16 @@ export type Card = { id: bigint; listId: bigint; title: string; parentId: bigint
 export type Member = { id: bigint; name: string };
 export type Comment = { id: bigint; cardId: bigint; authorId: bigint; text: string };
 export type CardTag = { id: bigint; cardId: bigint; tag: string };
-export type Plan = Exclude<Awaited<ReturnType<Conn['procedures']['demoPreviewDelete']>>, string>;
+export type Plan = Extract<Awaited<ReturnType<Conn['procedures']['demoPreviewDelete']>>, { ok: unknown }>['ok'];
 
 /** Demo tables, by canonical name. */
 export const TABLES = ['demo_board', 'demo_list', 'demo_card', 'demo_comment', 'demo_card_tag', 'demo_member'] as const;
 export type TableName = (typeof TABLES)[number];
 
-/**
- * Unwrap a procedure's `Result<T, string>`, throwing the error. The 2.11 SDK types the result as
- * `T | string` but delivers `{ ok: T } | { err: string }` (see FINDINGS), so accept both.
- */
-export function unwrap<T>(v: T | string): Exclude<T, string> {
-  const r = v as unknown;
-  if (typeof r === 'string') throw new Error(r);
-  if (r && typeof r === 'object') {
-    const keys = Object.keys(r);
-    if (keys.length === 1 && keys[0] === 'err') throw new Error((r as { err: string }).err);
-    if (keys.length === 1 && keys[0] === 'ok') return (r as { ok: Exclude<T, string> }).ok;
-  }
-  return r as Exclude<T, string>;
+/** Unwrap a procedure's `Result<T, string>`, throwing the error. */
+export function unwrap<T>(r: { ok: T } | { err: string }): T {
+  if ('err' in r) throw new Error(r.err);
+  return r.ok;
 }
 
 /** A key as relations writes it: hex of its BSATN. Every demo key is a u64. */
